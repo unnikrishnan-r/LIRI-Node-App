@@ -20,6 +20,14 @@ function handleCommand(command) {
     case "concert-this":
       searchBandsInTown(input);
       break;
+
+    case "movie-this":
+      console.log("Beginning movie function");
+      break;
+
+    default:
+      console.log("Invalid command, try again");
+      break;
   }
 }
 
