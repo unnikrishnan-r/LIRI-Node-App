@@ -1,12 +1,15 @@
 require("dotenv").config();
 const keys = require("./keys.js");
 const axios = require("axios");
-var Spotify = require("node-spotify-api");
+const moment = require("moment");
+const fs = require("fs");
+const Spotify = require("node-spotify-api");
+
 var spotify = new Spotify(keys.spotify);
 
-const command = process.argv[2];
 const defaultSpotifySong = "The Sign";
-let input = process.argv[3];
+var command = process.argv[2];
+var input = process.argv[3];
 
 handleCommand(command);
 
@@ -22,7 +25,11 @@ function handleCommand(command) {
       break;
 
     case "movie-this":
-      console.log("Beginning movie function");
+      searchMovie(input);
+      break;
+
+    case "do-what-it-says":
+      readCommandFromFile();
       break;
 
     default:
@@ -79,19 +86,60 @@ function searchBandsInTown(input) {
         console.log(`No concerts found`);
       }
 
+      console.log("-------------------------------------------------------");
       for (var i = 0; i < maxConcerts; i++) {
         console.log(
           `${response.data[i].venue.name} , ${response.data[i].venue.city} , ${
             response.data[i].venue.country
-          } @ ${response.data[i].datetime}`
+          } on ${moment(response.data[i].datetime).format("MM/DD/YYYY")}`
         );
       }
+      console.log("-------------------------------------------------------");
     } else {
       console.log(`Something went wrong, status: ${response.status}`);
     }
   });
 }
 
+function searchMovie(input) {
+  let movieName = input.split(" ").join("+");
+  let queryUrl =
+    "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
+  axiosCall(queryUrl).then(function(response) {
+    if (response.status == 200) {
+      let rottenTomatoesRatingIndex = response.data.Ratings.map(
+        e => e.Source
+      ).indexOf("Rotten Tomatoes");
+      let rottenTomatoesRating =
+        response.data.Ratings[rottenTomatoesRatingIndex].Value;
+
+      console.log("-------------------------------------------------------");
+      console.log(`**Title: ${response.data.Title}`);
+      console.log(`**Year: ${response.data.Year}`);
+      console.log(`**IMDB Rating : ${response.data.imdbRating}`);
+      console.log(`**RT Rating : ${rottenTomatoesRating}`);
+      console.log(`**Country : ${response.data.Country}`);
+      console.log(`**Language : ${response.data.Language}`);
+      console.log(`**Plot : ${response.data.Plot}`);
+      console.log(`**Actors : ${response.data.Actors}`);
+      console.log("-------------------------------------------------------");
+    } else {
+      console.log(`Something went wrong, status: ${response.status}`);
+    }
+  });
+}
+
+function readCommandFromFile() {
+  fs.readFile("./random.txt", "utf8", function(error, data) {
+    if (error) {
+      console.error(err);
+    }
+    let fileText = data.split(",");
+    command = fileText[0];
+    input = fileText[1];
+    handleCommand(command);
+  });
+}
 function axiosCall(queryUrl) {
   return axios
     .get(queryUrl)
